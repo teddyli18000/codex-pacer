@@ -53,6 +53,13 @@ public enum LanguagePreference: String, CaseIterable, Sendable {
     }
 }
 
+public enum DisplayTimeZone {
+    public static let defaultsKey = "displayTimeZone"
+    public static var current: TimeZone {
+        UserDefaults.standard.string(forKey: defaultsKey).flatMap(TimeZone.init(identifier:)) ?? .current
+    }
+}
+
 public enum L10n {
     /// A language is fixed for one launch, including stored notices and errors.
     public static let language = LanguagePreference.load().resolved()
@@ -99,13 +106,17 @@ public enum L10n {
 
     public static func date(_ value: Date, date dateStyle: Date.FormatStyle.DateStyle = .abbreviated,
                             time timeStyle: Date.FormatStyle.TimeStyle = .shortened) -> String {
-        value.formatted(Date.FormatStyle(date: dateStyle, time: timeStyle).locale(locale))
+        var style = Date.FormatStyle(date: dateStyle, time: timeStyle).locale(locale)
+        style.timeZone = DisplayTimeZone.current
+        return value.formatted(style)
     }
 
     /// A reset short enough for one row: the time today, the weekday within the
     /// coming six days, otherwise the date.
     public static func moment(_ value: Date, relativeTo now: Date, calendar: Calendar = .current,
                               locale: Locale? = nil) -> String {
+        var calendar = calendar
+        calendar.timeZone = DisplayTimeZone.current
         let days = calendar.dateComponents([.day], from: calendar.startOfDay(for: now), to: calendar.startOfDay(for: value)).day ?? 0
         var style = days == 0 ? Date.FormatStyle(date: .omitted, time: .shortened)
             : (1...6).contains(days) ? Date.FormatStyle().weekday(.abbreviated).hour().minute()
