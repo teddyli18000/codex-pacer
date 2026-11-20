@@ -6,7 +6,7 @@ struct QuotaCycleChart: View, Equatable {
     let data: QuotaChartData
     let accent: Color
     var referenceColor: Color = PacerPalette.tick
-    let displayTimeZone = DisplayTimeZone.current.identifier
+    let displayTimeZone = DisplayZone.current.identifier
     @State private var selectedDate: Date?
     @State private var selectedExpiryID: Date?
     @StateObject private var presentationCache = QuotaCyclePresentationCache()
@@ -216,7 +216,7 @@ private struct ExpiryMarker: Identifiable {
 private final class QuotaCyclePresentationCache: ObservableObject {
     private var cached: (data: QuotaChartData, language: AppLanguage, timeZone: String, presentation: QuotaCycleChartPresentation)?
     func value(for data: QuotaChartData) -> QuotaCycleChartPresentation {
-        let zone = DisplayTimeZone.current.identifier
+        let zone = DisplayZone.current.identifier
         if let cached, cached.data == data, cached.language == L10n.language, cached.timeZone == zone { return cached.presentation }
         let value = QuotaCycleChartPresentation(data: data)
         cached = (data, L10n.language, zone, value)

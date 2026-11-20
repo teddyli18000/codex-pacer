@@ -1237,7 +1237,7 @@ actor EngineRuntime {
         }
         if let selected = parameters.displayTimeZone {
             var arguments = UserDefaults.standard.volatileDomain(forName: UserDefaults.argumentDomain)
-            arguments[DisplayTimeZone.defaultsKey] = selected
+            arguments[DisplayZone.defaultsKey] = selected
             UserDefaults.standard.setVolatileDomain(arguments, forName: UserDefaults.argumentDomain)
         }
         if let hidden = parameters.hideProjects { hideProjects = hidden }

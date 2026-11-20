@@ -53,7 +53,7 @@ public enum LanguagePreference: String, CaseIterable, Sendable {
     }
 }
 
-public enum DisplayTimeZone {
+public enum DisplayZone {
     public static let defaultsKey = "displayTimeZone"
     public static func resolve(_ selected: String?, system: TimeZone = Calendar.current.timeZone) -> TimeZone {
         selected.flatMap(TimeZone.init(identifier:)) ?? system
@@ -111,7 +111,7 @@ public enum L10n {
     /// is the system zone. On Windows, Foundation's `TimeZone.current` stays GMT;
     /// the engine sets the host's zone as `NSTimeZone.default`, which
     /// `Calendar.current` follows.
-    public static var timeZone: TimeZone { DisplayTimeZone.current }
+    public static var timeZone: TimeZone { DisplayZone.current }
 
     /// Date text in `calendar`'s calendar and zone, in the app's locale unless
     /// another is given. Core formats dates only here: a `Date.FormatStyle`'s
@@ -119,7 +119,7 @@ public enum L10n {
     public static func format(_ value: Date, _ style: Date.FormatStyle, calendar: Calendar? = nil,
                               locale: Locale? = nil) -> String {
         var selectedCalendar = calendar ?? .current
-        if calendar == nil { selectedCalendar.timeZone = DisplayTimeZone.current }
+        if calendar == nil { selectedCalendar.timeZone = DisplayZone.current }
         var style = style.locale(locale ?? Self.locale)
         style.calendar = selectedCalendar
         style.timeZone = selectedCalendar.timeZone
@@ -136,7 +136,7 @@ public enum L10n {
     public static func moment(_ value: Date, relativeTo now: Date, calendar: Calendar? = nil,
                               locale: Locale? = nil) -> String {
         var selectedCalendar = calendar ?? .current
-        if calendar == nil { selectedCalendar.timeZone = DisplayTimeZone.current }
+        if calendar == nil { selectedCalendar.timeZone = DisplayZone.current }
         let days = selectedCalendar.dateComponents([.day], from: selectedCalendar.startOfDay(for: now), to: selectedCalendar.startOfDay(for: value)).day ?? 0
         let style = days == 0 ? Date.FormatStyle(date: .omitted, time: .shortened)
             : (1...6).contains(days) ? Date.FormatStyle().weekday(.abbreviated).hour().minute()

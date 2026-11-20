@@ -59,7 +59,7 @@ struct SettingsView: View {
     @AppStorage(IslandModel.deepseekProgressRingKey) private var deepseekProgressRing = true
     @AppStorage(IslandModel.showsAppButtonsKey) private var showsAppButtons = true
     @State private var language = LanguagePreference.load()
-    @State private var displayTimeZone = UserDefaults.standard.string(forKey: DisplayTimeZone.defaultsKey) ?? "system"
+    @State private var displayTimeZone = UserDefaults.standard.string(forKey: DisplayZone.defaultsKey) ?? "system"
     @State private var languageError: String?
     /// Text settings commit on Return, focus loss, a chooser or window close;
     /// an invalid value keeps the last valid one and explains why here.
@@ -144,7 +144,7 @@ struct SettingsView: View {
         .onChange(of: automaticUpdateChecks) { _, value in updater.setAutomaticallyChecks(value) }
         .onChange(of: language) { _, value in value.save(to: .standard); languageError = nil }
         .onChange(of: displayTimeZone) { _, value in
-            UserDefaults.standard.set(value, forKey: DisplayTimeZone.defaultsKey)
+            UserDefaults.standard.set(value, forKey: DisplayZone.defaultsKey)
             model.applySettings(sourceChanged: false)
         }
         .onChange(of: dockIcon) { _, value in value.save(); onDockIconChange(value) }
