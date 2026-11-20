@@ -2,7 +2,7 @@
   "language": "en",
   "schemaVersion": 1,
   "sources": {
-    "native/Sources/PacerCore/Resources/en.lproj/Localizable.strings": "4e59c824db5de9ddc0367ea4f23a9be2ed8265785a159f8a965d6c352c7d95b1",
+    "native/Sources/PacerCore/Resources/en.lproj/Localizable.strings": "a715ce8568bde46c67ea49d19beec1d2f0fac3da079fbccb538025223ce84049",
     "windows/EngineSupport/Resources/Localization/en.json": "0b0b4dcd7ebc33b80bd38ad541af2e86d831515198f05708c8878108a62e3cca"
   },
   "strings": {
@@ -12,7 +12,7 @@
     "account.expiries_collapsed": "Collapsed",
     "account.expiries_expanded": "Expanded",
     "account.expiry_remaining": "%@ left",
-    "account.expiry_timezone": "Local time (%@)",
+    "account.expiry_timezone": "Time zone (%@)",
     "account.expiry_title": "Reset expiry times",
     "account.expiry_unknown": "Banked reset expiry is unknown",
     "account.hide_expiries": "Hide reset expiry times",
@@ -1332,6 +1332,7 @@
     "settings.codex_home": "Codex Data Folder",
     "settings.compact_metric": "Show As",
     "settings.display_picker": "Display",
+    "settings.display_time_zone": "Display time zone",
     "settings.durable_help": "Shows Dot tasks assigned to this computer, even when their chats are closed. Pacer checks them through the Codex desktop app, which uses more power.",
     "settings.fifteen_minutes": "15 minutes",
     "settings.five_minutes": "5 minutes",

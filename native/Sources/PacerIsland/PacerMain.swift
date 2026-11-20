@@ -272,7 +272,7 @@ private final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelega
         AppTheme(defaults: .standard).apply()
         model = IslandModel(demo: CommandLine.arguments.contains("--demo"), initiallyExpanded: CommandLine.arguments.contains("--expanded"))
         model.makeClaudeCloudMonitor = { PacerMain.makeClaudeCloudMonitor() }
-        updater = AppUpdater(enabled: !model.isDemo)
+        updater = AppUpdater(enabled: false) // Fork releases are installed manually.
         panel = PanelController(model: model)
         reopenObserver = DistributedNotificationCenter.default().addObserver(forName: showExistingIsland,
             object: nil, queue: .main) { [weak self] _ in

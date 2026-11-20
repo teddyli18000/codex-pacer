@@ -53,6 +53,16 @@ public enum LanguagePreference: String, CaseIterable, Sendable {
     }
 }
 
+public enum DisplayTimeZone {
+    public static let defaultsKey = "displayTimeZone"
+    public static func resolve(_ selected: String?, system: TimeZone = Calendar.current.timeZone) -> TimeZone {
+        selected.flatMap(TimeZone.init(identifier:)) ?? system
+    }
+    public static var current: TimeZone {
+        resolve(UserDefaults.standard.string(forKey: defaultsKey))
+    }
+}
+
 public enum L10n {
     /// A language is fixed for one launch, including stored notices and errors.
     public static let language = LanguagePreference.load().resolved()
@@ -101,32 +111,36 @@ public enum L10n {
     /// is the system zone. On Windows, Foundation's `TimeZone.current` stays GMT;
     /// the engine sets the host's zone as `NSTimeZone.default`, which
     /// `Calendar.current` follows.
-    public static var timeZone: TimeZone { Calendar.current.timeZone }
+    public static var timeZone: TimeZone { DisplayTimeZone.current }
 
     /// Date text in `calendar`'s calendar and zone, in the app's locale unless
     /// another is given. Core formats dates only here: a `Date.FormatStyle`'s
     /// own default zone is GMT on Windows, even after the engine sets the host's.
-    public static func format(_ value: Date, _ style: Date.FormatStyle, calendar: Calendar = .current,
+    public static func format(_ value: Date, _ style: Date.FormatStyle, calendar: Calendar? = nil,
                               locale: Locale? = nil) -> String {
+        var selectedCalendar = calendar ?? .current
+        if calendar == nil { selectedCalendar.timeZone = DisplayTimeZone.current }
         var style = style.locale(locale ?? Self.locale)
-        style.calendar = calendar
-        style.timeZone = calendar.timeZone
+        style.calendar = selectedCalendar
+        style.timeZone = selectedCalendar.timeZone
         return value.formatted(style)
     }
 
     public static func date(_ value: Date, date dateStyle: Date.FormatStyle.DateStyle = .abbreviated,
-                            time timeStyle: Date.FormatStyle.TimeStyle = .shortened, calendar: Calendar = .current) -> String {
+                            time timeStyle: Date.FormatStyle.TimeStyle = .shortened, calendar: Calendar? = nil) -> String {
         format(value, Date.FormatStyle(date: dateStyle, time: timeStyle), calendar: calendar)
     }
 
     /// A reset short enough for one row: the time today, the weekday within the
     /// coming six days, otherwise the date.
-    public static func moment(_ value: Date, relativeTo now: Date, calendar: Calendar = .current,
+    public static func moment(_ value: Date, relativeTo now: Date, calendar: Calendar? = nil,
                               locale: Locale? = nil) -> String {
-        let days = calendar.dateComponents([.day], from: calendar.startOfDay(for: now), to: calendar.startOfDay(for: value)).day ?? 0
+        var selectedCalendar = calendar ?? .current
+        if calendar == nil { selectedCalendar.timeZone = DisplayTimeZone.current }
+        let days = selectedCalendar.dateComponents([.day], from: selectedCalendar.startOfDay(for: now), to: selectedCalendar.startOfDay(for: value)).day ?? 0
         let style = days == 0 ? Date.FormatStyle(date: .omitted, time: .shortened)
             : (1...6).contains(days) ? Date.FormatStyle().weekday(.abbreviated).hour().minute()
             : Date.FormatStyle().month(.abbreviated).day().hour().minute()
-        return format(value, style, calendar: calendar, locale: locale)
+        return format(value, style, calendar: selectedCalendar, locale: locale)
     }
 }

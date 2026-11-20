@@ -74,7 +74,7 @@ public partial class App
                     throw new ArgumentException("Update QA requires an isolated demo installation.");
                 channel = await Task.Run(() => WindowsUpdateChannel.ReadTest(arguments[test + 1], qa.Value)).WaitAsync(TimeSpan.FromSeconds(3));
             }
-            else channel = demo ? null : WindowsUpdateChannel.Production;
+            else channel = null; // Fork builds are updated from their own GitHub Releases.
             updateIdentity = identity;
             updateState = new WindowsUpdateState(Path.Combine(UpdateSessions.Root(identity.DataRoot), "state-v1.json"));
             if (channel == null) return;

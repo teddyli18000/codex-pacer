@@ -1,0 +1,152 @@
+name: Fork manual release
+
+# This one-time branch is pushed only when the owner requests a fork release.
+# The installed applications never check for or install updates automatically.
+on:
+  push:
+    branches: [fork/tz-4.6.0]
+
+permissions:
+  contents: read
+
+jobs:
+  contract:
+    name: Platform and localization contract
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - name: Validate
+        run: |
+          python3 scripts/windows/test_contract.py
+          python3 scripts/windows/check-contract.py
+          python3 scripts/windows/build-localization.py --check
+
+  macos:
+    name: macOS universal unsigned DMG
+    needs: contract
+    runs-on: macos-26
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - name: Full tests
+        run: python3 -u scripts/native/ci-test.py --timeout-seconds 1200 --diagnostics-prefix "$RUNNER_TEMP/pacer-test"
+      - name: DMG tools
+        run: |
+          python3 -m venv "$RUNNER_TEMP/dmg-tools"
+          "$RUNNER_TEMP/dmg-tools/bin/python" -m pip install --quiet -r scripts/release/dmg-requirements.txt
+      - name: Build and verify ad-hoc signed DMG (no notarization)
+        env:
+          PACER_DMG_PYTHON: ${{ runner.temp }}/dmg-tools/bin/python
+        run: bash scripts/release/build-macos-release.sh --unsigned --dmg-only
+      - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
+        with:
+          name: fork-macos-dmg
+          if-no-files-found: error
+          path: output/releases/4.6.0/unsigned/*-universal-unsigned.dmg
+      - name: Upload diagnostics
+        if: failure()
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
+        with:
+          name: fork-macos-diagnostics
+          path: ${{ runner.temp }}/pacer-test-*
+
+  windows-x64:
+    name: Windows x64 unsigned installer
+    needs: contract
+    runs-on: windows-2025
+    timeout-minutes: 60
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: actions/setup-dotnet@26b0ec14cb23fa6904739307f278c14f94c95bf1 # v5
+        with:
+          dotnet-version: 10.0.403
+      - name: Pinned Swift toolchain
+        run: ./scripts/windows/setup-swift.ps1
+      - name: Engine tests
+        run: ./scripts/windows/test-engine.ps1
+      - name: Release engine
+        run: ./scripts/windows/build-engine.ps1 -Configuration release
+      - name: Release desktop
+        run: ./scripts/windows/build-desktop.ps1 -Configuration Release -SkipEngine
+      - name: Build unsigned application and smoke test
+        run: ./scripts/windows/package-preview.ps1 -SkipBuild
+      - name: Package unsigned installer
+        run: |
+          $taskArchive = (Get-ChildItem output/windows/*-windows-x64-preview-*.zip | Sort-Object LastWriteTimeUtc -Descending | Select-Object -First 1).FullName
+          ./scripts/windows/package-installer.ps1 -Archive $taskArchive
+      - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
+        with:
+          name: fork-windows-x64
+          if-no-files-found: error
+          path: output/windows/installer-artifact/*-windows-x64-setup-*.exe
+
+  windows-arm64:
+    name: Windows ARM64 unsigned installer
+    needs: contract
+    runs-on: windows-11-arm
+    timeout-minutes: 60
+    env:
+      PACER_ARCHITECTURE: arm64
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: actions/setup-dotnet@26b0ec14cb23fa6904739307f278c14f94c95bf1 # v5
+        with:
+          dotnet-version: 10.0.403
+      - name: Native ARM64 Swift toolchain
+        run: ./scripts/windows/setup-swift.ps1 -Architecture arm64
+      - name: Release ARM64 engine
+        run: ./scripts/windows/build-engine.ps1 -Configuration release -Architecture arm64
+      - name: Release ARM64 desktop
+        run: ./scripts/windows/build-desktop.ps1 -Configuration Release -Architecture arm64 -SkipEngine
+      - name: Build unsigned ARM64 app
+        run: ./scripts/windows/package-preview.ps1 -SkipBuild -Architecture arm64 -BuildOnly
+      - name: Package unsigned ARM64 installer
+        run: |
+          $taskArchive = (Get-ChildItem output/windows/*-windows-arm64-preview-*.zip | Sort-Object LastWriteTimeUtc -Descending | Select-Object -First 1).FullName
+          ./scripts/windows/package-installer.ps1 -Archive $taskArchive -Architecture arm64
+      - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
+        with:
+          name: fork-windows-arm64
+          if-no-files-found: error
+          path: output/windows/installer-artifact/*-windows-arm64-setup-*.exe
+
+  publish:
+    name: Publish fork Release
+    needs: [macos, windows-x64, windows-arm64]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
+        with:
+          pattern: fork-*
+          merge-multiple: true
+          path: dist
+      - name: Publish only fully built binaries
+        run: |
+          set -euo pipefail
+          test "$(find dist -maxdepth 1 -name '*.dmg' | wc -l)" = 1
+          test "$(find dist -maxdepth 1 -name '*windows-x64-setup-*.exe' | wc -l)" = 1
+          test "$(find dist -maxdepth 1 -name '*windows-arm64-setup-*.exe' | wc -l)" = 1
+          mkdir output
+          cp "$(find dist -maxdepth 1 -name '*.dmg')" output/Codex-Pacer-4.6.0-tz1-macos-universal-unsigned.dmg
+          cp "$(find dist -maxdepth 1 -name '*windows-x64-setup-*.exe')" output/Codex-Pacer-4.6.0-tz1-windows-x64-setup-unsigned.exe
+          cp "$(find dist -maxdepth 1 -name '*windows-arm64-setup-*.exe')" output/Codex-Pacer-4.6.0-tz1-windows-arm64-setup-unsigned.exe
+          (cd output && sha256sum * > SHA256SUMS.txt)
+          gh release create fork-v4.6.0-tz.1 output/* --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title "Codex Pacer 4.6.0 + display time zone (fork)" --notes 'Personal fork of Codex Pacer 4.6.0.
+
+          Adds a display time zone setting (default: follow system).
+
+          No automatic software updates or background update checks on Windows or macOS. Future updates are manual only.
+
+          Windows installers are not Authenticode signed. The macOS DMG uses ad-hoc signing and is not Apple notarized; macOS Gatekeeper may require manual confirmation. These files are not from the upstream maintainer.
+
+          SHA256SUMS.txt contains checksums for the three binaries.'

@@ -42,7 +42,7 @@ public struct QuotaCycleChartPresentation: Codable, Equatable, Sendable {
     public let accessibilityLabel: String
     public let lineHelp: String
 
-    public init(data: QuotaChartData, language: AppLanguage = L10n.language, calendar: Calendar = .current) {
+    public init(data: QuotaChartData, language: AppLanguage = L10n.language, calendar: Calendar? = nil) {
         self.language = language.rawValue
         startedAt = data.startedAt.timeIntervalSince1970; resetsAt = data.resetsAt.timeIntervalSince1970
         let span = data.resetsAt.timeIntervalSince(data.startedAt)

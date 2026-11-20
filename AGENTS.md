@@ -1,5 +1,7 @@
 # Instructions for agents
 
+**For this fork:** Read [FORK_REQUIREMENTS.md](FORK_REQUIREMENTS.md) first. In particular, never enable automatic updates or remove the independent display time zone selector.
+
 Codex Pacer is a native macOS app built with SwiftUI/AppKit, plus a Windows port: a WPF/.NET host over the shared Swift Core engine. Follow the user's current instructions and preserve unrelated work.
 
 ## Read before working
