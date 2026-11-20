@@ -34,7 +34,7 @@ internal sealed record WindowsUpdateChannel(Uri Feed, string PublicKey, string? 
             TestScope != null && (TestCertificateSHA256?.Length != 64 || !TestCertificateSHA256.All(Uri.IsHexDigit) || RedirectHosts.Count != 0))
             throw new InvalidDataException("The Windows update channel is invalid.");
     }
-    internal const string ReleaseFeed = "https://github.com/RyanZhangNTU/codex-pacer/releases/latest/download/appcast-windows.xml";
+    internal const string ReleaseFeed = "https://github.com/teddyli18000/codex-pacer/releases/latest/download/appcast-windows.xml";
     // Windows ships in the Mac GitHub Release: appcast-windows.xml and the installers are
     // assets of the latest release, signed with the Mac appcast's Ed25519 key (SUPublicEDKey).
     // Installers are not Authenticode signed yet, so no signer is pinned.
